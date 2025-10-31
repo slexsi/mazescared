@@ -1,33 +1,22 @@
-// ======= Quiz Questions Data =======
-const quizQuestions = [
-  // Level 1
-  [
-    { question: "1 + 1 = ?", answers: ["1", "2", "3"], correct: "2" },
-    { question: "Color of the sky?", answers: ["Red", "Blue", "Green"], correct: "Blue" },
-    { question: "Capital of France?", answers: ["Paris", "London", "Rome"], correct: "Paris" }
-  ],
-  // Level 2
-  [
-    { question: "5 × 3 = ?", answers: ["8", "15", "10"], correct: "15" },
-    { question: "Water freezes at ?", answers: ["0°C", "100°C", "50°C"], correct: "0°C" },
-    { question: "Opposite of hot?", answers: ["Cold", "Warm", "Spicy"], correct: "Cold" }
-  ],
-  // Level 3
-  [
-    { question: "12 / 4 = ?", answers: ["2", "3", "4"], correct: "3" },
-    { question: "Which is a mammal?", answers: ["Shark", "Frog", "Dog"], correct: "Dog" },
-    { question: "What color is a banana?", answers: ["Yellow", "Green", "Purple"], correct: "Yellow" }
-  ],
-  // Level 4
-  [
-    { question: "What is 9 + 10?", answers: ["19", "21", "910"], correct: "19" },
-    { question: "Which planet is known as the Red Planet?", answers: ["Mars", "Venus", "Jupiter"], correct: "Mars" },
-    { question: "What language is used for web styling?", answers: ["HTML", "CSS", "Python"], correct: "CSS" }
-  ],
-  // Level 5
-  [
-    { question: "Square root of 64?", answers: ["6", "8", "9"], correct: "8" },
-    { question: "Fastest land animal?", answers: ["Cheetah", "Lion", "Horse"], correct: "Cheetah" },
-    { question: "HTML stands for?", answers: ["HyperText Markup Language", "Home Tool Markup Language", "HyperText Machine Language"], correct: "HyperText Markup Language" }
-  ]
+// Questions array (3 questions per key)
+const questions = [
+  { q: "1 + 1 = ?", a: ["1","2","3"], c: "2" },
+  { q: "Capital of France?", a: ["Paris","London","Rome"], c: "Paris" },
+  { q: "Color of sky?", a: ["Red","Green","Blue"], c: "Blue" },
+  
+  { q: "5 * 2 = ?", a: ["10","8","12"], c: "10" },
+  { q: "Largest planet?", a: ["Earth","Jupiter","Mars"], c: "Jupiter" },
+  { q: "H2O is?", a: ["Water","Oxygen","Hydrogen"], c: "Water" },
+  
+  { q: "Which is a mammal?", a: ["Shark","Dolphin","Octopus"], c: "Dolphin" },
+  { q: "2 + 3 * 2 = ?", a: ["10","8","7"], c: "8" },
+  { q: "Sun rises from?", a: ["West","East","North"], c: "East" },
+  
+  { q: "7 - 4 = ?", a: ["3","2","4"], c: "3" },
+  { q: "Fastest land animal?", a: ["Cheetah","Lion","Horse"], c: "Cheetah" },
+  { q: "Primary color?", a: ["Purple","Red","Pink"], c: "Red" },
+
+  { q: "Square root of 16?", a: ["2","4","8"], c: "4" },
+  { q: "Water freezes at?", a: ["0°C","100°C","50°C"], c: "0°C" },
+  { q: "Which is a fruit?", a: ["Carrot","Apple","Potato"], c: "Apple" }
 ];
