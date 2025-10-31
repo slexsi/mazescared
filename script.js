@@ -74,28 +74,26 @@ const mazes = [
     { x:100,y:480,w:500,h:20 },{ x:680,y:100,w:20,h:400 },
     { x:250,y:250,w:300,h:20 }
   ],
-  // Level4 Spiral
+  // Level4 Spiral (adjusted opening)
   [
     { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
     { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    { x:60,y:60,w:680,h:20 },{ x:60,y:60,w:20,h:460 },
-    { x:60,y:500,w:640,h:20 },{ x:680,y:100,w:20,h:420 },
-    { x:100,y:100,w:600,h:20 },{ x:100,y:100,w:20,h:380 },
-    { x:100,y:460,w:520,h:20 },{ x:600,y:140,w:20,h:340 },
-    { x:140,y:140,w:480,h:20 },{ x:140,y:140,w:20,h:300 },
-    { x:140,y:420,w:440,h:20 },{ x:560,y:180,w:20,h:260 }
-  ],
-  // Level5
-  [
-    { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
-    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    { x:150,y:100,w:500,h:20 },
-    { x:150,y:100,w:20,h:400 },
-    { x:150,y:480,w:500,h:20 },
-    { x:630,y:100,w:20,h:400 },
-    { x:300,y:200,w:200,h:20 },
-    { x:400,y:200,w:20,h:300 }
+    // Make top-left corner open for player spawn
+    { x:60,y:80,w:680,h:20 },  // shifted down a bit to leave space at top
+    { x:60,y:60,w:20,h:460 },  // keep left wall but leave top gap
+    ...
   ]
+  
+  // Level5 (adjusted opening)
+  [
+    { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
+    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
+    // top-left opening for player spawn
+    { x:150,y:120,w:500,h:20 }, // shifted down slightly
+    { x:150,y:120,w:20,h:380 }, // keep left wall but leave small top gap
+    ...
+  ]
+
 ];
 
 // ===== Utilities =====
