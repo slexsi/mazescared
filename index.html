@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Maze Quiz Game</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Maze</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="score-container">Score: <span id="total-score">0</span></div>
+  <h1>🎵 Quiz Maze 🎵</h1>
+  <p id="score">Score: 0</p>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-  <canvas id="mazeCanvas"></canvas>
-
-  <div id="quiz-container">
-    <div id="quiz-tab"></div>
-    <div id="quiz-timer-bar"></div>
+  <!-- Quiz container -->
+  <div id="quiz-container" class="hidden">
+    <div id="quiz-box">
+      <h2 id="question-text"></h2>
+      <div id="answers"></div>
+      <p id="timer">Time Left: <span id="time-left">15</span>s</p>
+    </div>
   </div>
 
-  <div id="game-over-container">
-    <p>Game Over!</p>
-    <button id="restart-btn">Restart</button>
-  </div>
+  <!-- 🔊 Audio Elements -->
+  <audio id="bg-music" src="music.mp3" loop></audio>
+  <audio id="sfx-correct" src="correct.mp3"></audio>
+  <audio id="sfx-key" src="key.mp3"></audio>
 
-  <audio id="bg-song" src="bg-song.mp3" loop></audio>
-  <audio id="special-sfx" src="special-sfx.mp3"></audio>
-
+  <script src="questions.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
