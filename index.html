@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Quiz Game</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="score-container">Score: <span id="total-score">0</span></div>
+
+  <canvas id="mazeCanvas"></canvas>
+
+  <div id="quiz-container">
+    <div id="quiz-tab"></div>
+    <div id="quiz-timer-bar"></div>
+  </div>
+
+  <div id="game-over-container">
+    <p>Game Over!</p>
+    <button id="restart-btn">Restart</button>
+  </div>
+
+  <audio id="bg-song" src="bg-song.mp3" loop></audio>
+  <audio id="special-sfx" src="special-sfx.mp3"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
