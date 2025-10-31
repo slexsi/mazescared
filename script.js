@@ -83,20 +83,24 @@ const mazes = [
     { x: 680, y: 100, w: 20,  h: 400 }, // right
     { x: 250, y: 250, w: 300, h: 20 } // center divider
   ],
-  // Level4 (fixed wider spiral-ish but with clear path)
+  // Level 4 - Spiral maze (fixed and walkable)
   [
-    { x: 0,   y: 0,   w: 800, h: 20 }, { x: 0,   y: 580, w: 800, h: 20 },
-    { x: 0,   y: 0,   w: 20,  h: 600 }, { x: 780, y: 0,   w: 20,  h: 600 },
-    { x: 60,  y: 60,  w: 680, h: 20 },
-    { x: 60,  y: 60,  w: 20,  h: 480 },
-    { x: 60,  y: 520, w: 620, h: 20 },
-    { x: 660, y: 100, w: 20,  h: 440 },
-    { x: 120, y: 100, w: 520, h: 20 },
-    { x: 120, y: 140, w: 20,  h: 360 },
-    { x: 120, y: 480, w: 460, h: 20 },
-    { x: 560, y: 180, w: 20,  h: 320 },
-    // ensure there are gaps: add intentionally a couple of openings by making slight offsets
-    // (these walls above are spaced to create a passable spiral)
+    { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
+    { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 },
+  
+    // outer spiral - open at top-left and center
+    { x: 60, y: 60, w: 680, h: 20 },
+    { x: 60, y: 60, w: 20, h: 460 },
+    { x: 60, y: 500, w: 640, h: 20 },
+    { x: 680, y: 100, w: 20, h: 420 },
+    { x: 100, y: 100, w: 600, h: 20 },
+    { x: 100, y: 100, w: 20, h: 380 },
+    { x: 100, y: 460, w: 520, h: 20 },
+    { x: 600, y: 140, w: 20, h: 340 },
+    { x: 140, y: 140, w: 480, h: 20 },
+    { x: 140, y: 140, w: 20, h: 300 },
+    { x: 140, y: 420, w: 440, h: 20 },
+    { x: 560, y: 180, w: 20, h: 260 }
   ],
   // Level5
   [
