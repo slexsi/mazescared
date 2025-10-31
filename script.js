@@ -1,4 +1,4 @@
-// ===== script.js (Full Playable Version) =====
+// ===== script.js (Full Rewrite: Playable + Quiz + Head Start + Enemy Scaling) =====
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -19,19 +19,18 @@ let quizTimer = null;
 let quizTime = 15;
 let currentQuestionIndex = 0;
 
+// Replace with your own images
 const playerImg = new Image(); playerImg.src = "player.png";
 const enemyImg = new Image(); enemyImg.src = "enemy.png";
 
-// Player always level 5 speed
-let player = { x: 50, y: 50, size: 40, speed: 4 };
+// Player & enemy stats
+let player = { x: 50, y: 50, size: 40, speed: 3, hitbox: 25 };
 let enemy  = { x: 700, y: 500, size: 40, speed: 2 };
 let key    = { x: 0, y: 0, size: 30, collected: false };
 
-const playerHitboxReduction = 0.5; // smaller hitbox for collisions
-
 let keysDown = {};
 document.addEventListener("keydown", e => keysDown[e.key] = true);
-document.addEventListener("keyup",   e => keysDown[e.key] = false);
+document.addEventListener("keyup", e => keysDown[e.key] = false);
 
 // ===== Audio Unlock =====
 function unlockAudioOnFirstInteraction() {
@@ -49,18 +48,58 @@ bgMusic.volume = 0.5; bgMusic.loop = true; bgMusic.play().catch(()=>{});
 specialSFX.load();
 let sfxPlayed = false;
 
-// ===== Mazes (with playable openings) =====
+// ===== Mazes (with openings in Level 4 & 5) =====
 const mazes = [
   // Level1
-  [{x:0,y:0,w:800,h:20},{x:0,y:580,w:800,h:20},{x:0,y:0,w:20,h:600},{x:780,y:0,w:20,h:600},{x:200,y:150,w:400,h:20},{x:200,y:300,w:400,h:20},{x:200,y:450,w:400,h:20}],
+  [
+    { x:0,y:0,w:800,h:20},{ x:0,y:580,w:800,h:20 },
+    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
+    { x:200,y:150,w:400,h:20 },
+    { x:200,y:300,w:400,h:20 },
+    { x:200,y:450,w:400,h:20 }
+  ],
   // Level2
-  [{x:0,y:0,w:800,h:20},{x:0,y:580,w:800,h:20},{x:0,y:0,w:20,h:600},{x:780,y:0,w:20,h:600},{x:150,y:100,w:500,h:20},{x:150,y:100,w:20,h:380},{x:150,y:480,w:500,h:20},{x:630,y:250,w:20,h:250},{x:300,y:250,w:350,h:20}],
+  [
+    { x:0,y:0,w:800,h:20},{ x:0,y:580,w:800,h:20 },
+    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
+    { x:150,y:100,w:500,h:20 },
+    { x:150,y:100,w:20,h:380 },
+    { x:150,y:480,w:500,h:20 },
+    { x:630,y:250,w:20,h:250 },
+    { x:300,y:250,w:350,h:20 }
+  ],
   // Level3
-  [{x:0,y:0,w:800,h:20},{x:0,y:580,w:800,h:20},{x:0,y:0,w:20,h:600},{x:780,y:0,w:20,h:600},{x:100,y:100,w:520,h:20},{x:100,y:100,w:20,h:280},{x:100,y:480,w:500,h:20},{x:680,y:100,w:20,h:400},{x:250,y:250,w:300,h:20}],
-  // Level4
-  [{x:0,y:0,w:800,h:20},{x:0,y:580,w:800,h:20},{x:0,y:0,w:20,h:600},{x:780,y:0,w:20,h:600},{x:150,y:80,w:600,h:20},{x:150,y:80,w:20,h:400},{x:150,y:460,w:600,h:20},{x:730,y:100,w:20,h:380},{x:200,y:140,w:520,h:20},{x:200,y:140,w:20,h:320},{x:200,y:440,w:460,h:20},{x:620,y:180,w:20,h:260}],
-  // Level5
-  [{x:0,y:0,w:800,h:20},{x:0,y:580,w:800,h:20},{x:0,y:0,w:20,h:600},{x:780,y:0,w:20,h:600},{x:120,y:100,w:520,h:20},{x:120,y:100,w:20,h:380},{x:120,y:480,w:500,h:20},{x:630,y:100,w:20,h:400},{x:300,y:220,w:200,h:20},{x:400,y:220,w:20,h:300}]
+  [
+    { x:0,y:0,w:800,h:20},{ x:0,y:580,w:800,h:20 },
+    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
+    { x:100,y:100,w:520,h:20 },{ x:100,y:100,w:20,h:280 },
+    { x:100,y:480,w:500,h:20 },{ x:680,y:100,w:20,h:400 },
+    { x:250,y:250,w:300,h:20 }
+  ],
+  // Level4 Spiral with openings
+  [
+    { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
+    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
+    { x:60,y:60,w:680,h:20 },{ x:60,y:60,w:20,h:460 },
+    { x:60,y:500,w:640,h:20 },{ x:680,y:100,w:20,h:420 },
+    { x:100,y:100,w:600,h:20 },{ x:100,y:100,w:20,h:380 },
+    { x:100,y:460,w:520,h:20 },{ x:600,y:140,w:20,h:340 },
+    { x:140,y:140,w:480,h:20 },{ x:140,y:140,w:20,h:300 },
+    { x:140,y:420,w:440,h:20 },{ x:560,y:180,w:20,h:260 },
+    { x:400,y:20,w:20,h:60 }, // opening top
+  ],
+  // Level5 with openings
+  [
+    { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
+    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
+    { x:150,y:100,w:500,h:20 },
+    { x:150,y:100,w:20,h:400 },
+    { x:150,y:480,w:500,h:20 },
+    { x:630,y:100,w:20,h:400 },
+    { x:300,y:200,w:200,h:20 },
+    { x:400,y:200,w:20,h:300 },
+    { x:500,y:0,w:20,h:100 } // opening top
+  ]
 ];
 
 // ===== Utilities =====
@@ -68,6 +107,7 @@ function rectCollision(r1,r2){
   return !(r1.x+r1.w<r2.x||r1.x>r2.x+r2.w||r1.y+r1.h<r2.y||r1.y>r2.y+r2.h);
 }
 function isRectCollidingAny(rect,walls){ return walls.some(w=>rectCollision(rect,w)); }
+
 function findSafePosition(walls, opts={}) {
   const margin = opts.margin||10, attempts=500;
   for(let i=0;i<attempts;i++){
@@ -88,7 +128,7 @@ function movePlayer(){
   if(keysDown["ArrowLeft"]||keysDown["a"]) nx-=player.speed;
   if(keysDown["ArrowRight"]||keysDown["d"]) nx+=player.speed;
   const walls = mazes[level-1];
-  const rect={x:nx,y:ny,w:player.size,h:player.size};
+  const rect={x:nx,y:ny,w:player.hitbox,h:player.hitbox};
   if(!isRectCollidingAny(rect,walls)){ player.x=nx; player.y=ny; }
 }
 
@@ -107,12 +147,56 @@ function placeKey(){
   key.x=pos.x; key.y=pos.y; key.collected=false;
 }
 
-// ===== Quiz functions (simplified placeholder) =====
-function showQuestion(){ /* implement your quiz display */ }
-function answerQuestion(ans,clickedBtn){ /* implement quiz answer handling */ }
-function nextOrShowNext(){ /* implement quiz next question */ }
-function startQuiz(){ /* implement quiz start */ }
-function endQuiz(success){ /* implement quiz end */ }
+// ===== Quiz =====
+function showQuestion(){
+  const startIndex=(level-1)*3;
+  const q=questions[startIndex+currentQuestionIndex]; if(!q) return;
+  questionText.textContent=q.q;
+  answersDiv.innerHTML="";
+  q.btns=[];
+  q.a.forEach(ans=>{
+    const btn=document.createElement("button");
+    btn.textContent=ans;
+    btn.onclick=()=>answerQuestion(ans,btn);
+    answersDiv.appendChild(btn);
+    q.btns.push(btn);
+  });
+}
+
+function answerQuestion(ans,clickedBtn){
+  const startIndex=(level-1)*3;
+  const q=questions[startIndex+currentQuestionIndex];
+  if(ans===q.c){ score+=100; nextOrShowNext(); }
+  else{
+    if(clickedBtn) clickedBtn.style.backgroundColor="red";
+    q.btns.forEach(btn=>{ if(btn.textContent===q.c) btn.style.backgroundColor="green"; });
+    setTimeout(()=>{ nextOrShowNext(); },1000);
+  }
+  document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
+}
+
+function nextOrShowNext(){
+  currentQuestionIndex++;
+  if(currentQuestionIndex>=3) endQuiz(true);
+  else showQuestion();
+}
+
+function startQuiz(){
+  quizActive=true; quizContainer.style.display="flex"; currentQuestionIndex=0; quizTime=15; sfxPlayed=false;
+  try{ specialSFX.pause(); specialSFX.currentTime=0; }catch(e){}
+  showQuestion();
+  quizTimer=setInterval(()=>{
+    quizTime-=0.05; timeLeftEl.textContent=Math.ceil(quizTime);
+    if(quizTime<=10 && !sfxPlayed){ specialSFX.play().catch(()=>{}); sfxPlayed=true; }
+    if(quizTime<=0) endQuiz(false);
+  },50);
+}
+
+function endQuiz(success){
+  clearInterval(quizTimer); quizActive=false; quizContainer.style.display="none";
+  try{ specialSFX.pause(); specialSFX.currentTime=0; }catch(e){}
+  if(success) nextLevel(); else gameOver();
+}
 
 // ===== Head start =====
 let headStartActive = true;
@@ -127,9 +211,12 @@ function nextLevel(){
   const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
   player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
 
-  // Scale enemy size and speed
-  enemy.size = 40 + level*15;
-  enemy.speed = 2 + level*0.5;
+  // Enemy grows faster on higher levels
+  enemy.size = 40 + (level-1)*20;
+  enemy.speed = 2 + (level-1)*0.5;
+
+  // Player speed same as lvl5
+  player.speed = 4.5;
 
   placeKey();
   document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
@@ -145,20 +232,15 @@ function gameOver(){ gameOverScreen.style.display="flex"; }
 // ===== Restart =====
 restartBtn.addEventListener("click",()=>{
   gameOverScreen.style.display="none"; 
-  level=1; score=0;
-  player.speed=4;
-  enemy.size=40; enemy.speed=2;
+  level=1; score=0; enemy.size=40; enemy.speed=2; player.speed=4.5;
   const walls=mazes[level-1];
   const pPos=findSafePosition(walls,{w:player.size,h:player.size,margin:40});
   const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
   player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
   placeKey();
   document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
-  
-  headStartActive = true;
-  headStartStartTime = null;
+  headStartActive = true; headStartStartTime = null;
   specialSFX.play().catch(()=>{});
-  
   requestAnimationFrame(loop);
 });
 
@@ -177,7 +259,7 @@ function loop(timestamp){
   if(!headStartStartTime) headStartStartTime = timestamp;
   const elapsed = timestamp - headStartStartTime;
 
-  const hitDist=(player.size*playerHitboxReduction+enemy.size)/2;
+  const hitDist=(player.hitbox+enemy.size)/2;
   if(Math.hypot(player.x-enemy.x,player.y-enemy.y)<hitDist) return gameOver();
 
   movePlayer();
@@ -187,7 +269,7 @@ function loop(timestamp){
     moveEnemy();
   }
 
-  if(!key.collected && Math.abs(player.x-key.x)<(player.size/2+key.size/2) && Math.abs(player.y-key.y)<(player.size/2+key.size/2)){
+  if(!key.collected && Math.abs(player.x-key.x)<(player.hitbox/2+key.size/2) && Math.abs(player.y-key.y)<(player.hitbox/2+key.size/2)){
     key.collected=true; startQuiz();
   }
 
@@ -201,6 +283,8 @@ function loop(timestamp){
   const pPos=findSafePosition(walls,{w:player.size,h:player.size,margin:40});
   const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
   player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
+
+  player.speed = 4.5;
   headStartActive = true; headStartStartTime = null;
   specialSFX.play().catch(()=>{});
   placeKey(); 
