@@ -44,35 +44,35 @@ const mazes = [
   // Level 1
   [
     {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:100, y:100, w:600, h:20}, {x:100, y:200, w:20, h:300}, {x:200, y:300, w:500, h:20},
+    {x:150, y:100, w:500, h:20}, {x:150, y:200, w:20, h:300}, {x:200, y:400, w:400, h:20},
   ],
   // Level 2
   [
     {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:50, y:50, w:700, h:20}, {x:50, y:50, w:20, h:500}, {x:50, y:530, w:700, h:20}, {x:730, y:50, w:20, h:500},
-    {x:150, y:150, w:500, h:20}, {x:150, y:250, w:20, h:200},
+    {x:100, y:100, w:600, h:20}, {x:100, y:150, w:20, h:400}, {x:100, y:500, w:600, h:20}, {x:680, y:150, w:20, h:370},
   ],
   // Level 3
   [
     {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:100, y:100, w:600, h:20}, {x:100, y:200, w:20, h:300}, {x:200, y:300, w:500, h:20}, {x:680, y:200, w:20, h:200},
+    {x:150, y:80, w:500, h:20}, {x:150, y:120, w:20, h:400}, {x:150, y:500, w:500, h:20}, {x:630, y:120, w:20, h:380},
   ],
   // Level 4
   [
     {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:50, y:100, w:700, h:20}, {x:50, y:200, w:20, h:300}, {x:100, y:400, w:600, h:20}, {x:680, y:200, w:20, h:200},
+    {x:100, y:100, w:600, h:20}, {x:100, y:150, w:20, h:400}, {x:100, y:500, w:600, h:20}, {x:680, y:150, w:20, h:370},
+    {x:250, y:200, w:300, h:20},
   ],
   // Level 5
   [
     {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:50, y:100, w:700, h:20}, {x:50, y:200, w:20, h:300}, {x:100, y:400, w:600, h:20}, {x:680, y:200, w:20, h:200},
-    {x:300, y:250, w:200, h:20},
+    {x:100, y:100, w:600, h:20}, {x:100, y:150, w:20, h:400}, {x:100, y:500, w:600, h:20}, {x:680, y:150, w:20, h:370},
+    {x:200, y:250, w:400, h:20}, {x:200, y:350, w:20, h:100},
   ],
 ];
 
 // ===== Collision detection with buffer =====
 function rectCollision(r1, r2){
-  const buffer = 1; // small margin to prevent getting stuck
+  const buffer = 1;
   return !(r1.x + r1.w - buffer < r2.x ||
            r1.x + buffer > r2.x + r2.w ||
            r1.y + r1.h - buffer < r2.y ||
@@ -97,7 +97,6 @@ function movePlayer(){
 
 function moveEnemy(){
   if(quizActive) return;
-  // Enemy ignores walls
   let dx = player.x - enemy.x;
   let dy = player.y - enemy.y;
   let dist = Math.hypot(dx, dy);
@@ -206,8 +205,9 @@ function endQuiz(success){
 function nextLevel(){
   level++;
   if(level>5){ alert("You win!"); level=1; score=0; }
-  player.x=50; player.y=50;
-  enemy.x=700; enemy.y=500;
+  player.x = 50; player.y = 50;
+  enemy.x = 700; enemy.y = 500;
+  enemy.size = 40 + (level-1)*5;
   placeKey();
 }
 
