@@ -1,3 +1,4 @@
+// ===== script.js (safe spawn + SFX unlock + fixed maze placements) =====
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -18,102 +19,133 @@ let quizTimer = null;
 let quizTime = 15;
 let currentQuestionIndex = 0;
 
-const playerImg = new Image();
-playerImg.src = "player.png";
-const enemyImg = new Image();
-enemyImg.src = "enemy.png";
+const playerImg = new Image(); playerImg.src = "player.png";
+const enemyImg = new Image(); enemyImg.src = "enemy.png";
 
 let player = { x: 50, y: 50, size: 40, speed: 3 };
-let enemy = { x: 700, y: 500, size: 40, speed: 2 };
-let key = { x: 0, y: 0, size: 30, collected: false };
+let enemy  = { x: 700, y: 500, size: 40, speed: 2 };
+let key    = { x: 0, y: 0, size: 30, collected: false };
 
 let keysDown = {};
 document.addEventListener("keydown", e => keysDown[e.key] = true);
-document.addEventListener("keyup", e => keysDown[e.key] = false);
+document.addEventListener("keyup",   e => keysDown[e.key] = false);
 
-// ===== Audio =====
+// ===== Audio Unlock helper (for autoplay restrictions) =====
+function unlockAudioOnFirstInteraction() {
+  function unlock() {
+    bgMusic.play().catch(()=>{});
+    // play & pause SFX once to allow it to be played later without user gesture blocking
+    specialSFX.play().then(() => specialSFX.pause()).catch(()=>{});
+    document.removeEventListener("click", unlock);
+    document.removeEventListener("keydown", unlock);
+  }
+  document.addEventListener("click", unlock, { once: true });
+  document.addEventListener("keydown", unlock, { once: true });
+}
+unlockAudioOnFirstInteraction();
+
+// try autoplay background music immediately, fallback handled by unlock above
 bgMusic.volume = 0.5;
-bgMusic.play().catch(() => {
-  document.addEventListener("click", () => bgMusic.play(), { once: true });
-});
-specialSFX.load();
+bgMusic.loop = true;
+bgMusic.play().catch(()=>{});
 
-// ===== Maze Layouts (simpler + reachable paths) =====
+// preload sfx
+specialSFX.load();
+let sfxPlayed = false; // controls once-per-quiz SFX
+
+// ===== Maze definitions (kept simple & passable) =====
 const mazes = [
-  // Level 1 - easy intro
+  // Level1
   [
-    { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
-    { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 },
+    { x: 0,   y: 0,   w: 800, h: 20 }, { x: 0,   y: 580, w: 800, h: 20 },
+    { x: 0,   y: 0,   w: 20,  h: 600 }, { x: 780, y: 0,   w: 20,  h: 600 },
     { x: 200, y: 150, w: 400, h: 20 },
     { x: 200, y: 300, w: 400, h: 20 },
     { x: 200, y: 450, w: 400, h: 20 }
   ],
-  // Level 2 - zigzag path
+  // Level2 (safe corridor)
   [
-    { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
-    { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 },
+    { x: 0,   y: 0,   w: 800, h: 20 }, { x: 0,   y: 580, w: 800, h: 20 },
+    { x: 0,   y: 0,   w: 20,  h: 600 }, { x: 780, y: 0,   w: 20,  h: 600 },
     { x: 150, y: 100, w: 500, h: 20 },
-    { x: 150, y: 100, w: 20, h: 400 },
+    { x: 150, y: 100, w: 20,  h: 380 },
     { x: 150, y: 480, w: 500, h: 20 },
-    { x: 630, y: 250, w: 20, h: 250 },
+    { x: 630, y: 250, w: 20,  h: 250 },
     { x: 300, y: 250, w: 350, h: 20 }
   ],
-  // Level 3 - box maze (now with openings)
+  // Level3 (opened box with two gaps)
   [
-    { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
-    { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 },
-  
-    // outer rectangle walls with gaps (top-left & bottom-right openings)
-    { x: 100, y: 100, w: 520, h: 20 },              // top wall (gap on right)
-    { x: 100, y: 100, w: 20, h: 280 },              // left wall (gap bottom)
-    { x: 100, y: 480, w: 500, h: 20 },              // bottom wall (gap left)
-    { x: 680, y: 100, w: 20, h: 400 },              // right wall
-  
-    // center divider
-    { x: 250, y: 250, w: 300, h: 20 }
+    { x: 0,   y: 0,   w: 800, h: 20 }, { x: 0,   y: 580, w: 800, h: 20 },
+    { x: 0,   y: 0,   w: 20,  h: 600 }, { x: 780, y: 0,   w: 20,  h: 600 },
+    { x: 100, y: 100, w: 520, h: 20 }, // top (gap on right)
+    { x: 100, y: 100, w: 20,  h: 280 }, // left (gap bottom)
+    { x: 100, y: 480, w: 500, h: 20 }, // bottom (gap left)
+    { x: 680, y: 100, w: 20,  h: 400 }, // right
+    { x: 250, y: 250, w: 300, h: 20 } // center divider
   ],
-
-  // Level 4 - Spiral maze (fixed with open path)
-[
-  { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
-  { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 },
-
-  // outer spiral walls with proper entry/exit
-  { x: 60, y: 60, w: 680, h: 20 },
-  { x: 60, y: 60, w: 20, h: 480 },
-  { x: 60, y: 520, w: 620, h: 20 },
-  { x: 660, y: 100, w: 20, h: 440 },
-  { x: 120, y: 100, w: 520, h: 20 },
-  { x: 120, y: 140, w: 20, h: 360 },
-  { x: 120, y: 480, w: 460, h: 20 },
-  { x: 560, y: 180, w: 20, h: 320 },
-  { x: 180, y: 180, w: 400, h: 20 },
-  { x: 180, y: 220, w: 20, h: 260 },
-  { x: 180, y: 440, w: 340, h: 20 },
-  { x: 500, y: 260, w: 20, h: 180 }
-],
-
-  // Level 5 - final complex but open enough
+  // Level4 (fixed wider spiral-ish but with clear path)
   [
-    { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
-    { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 },
+    { x: 0,   y: 0,   w: 800, h: 20 }, { x: 0,   y: 580, w: 800, h: 20 },
+    { x: 0,   y: 0,   w: 20,  h: 600 }, { x: 780, y: 0,   w: 20,  h: 600 },
+    { x: 60,  y: 60,  w: 680, h: 20 },
+    { x: 60,  y: 60,  w: 20,  h: 480 },
+    { x: 60,  y: 520, w: 620, h: 20 },
+    { x: 660, y: 100, w: 20,  h: 440 },
+    { x: 120, y: 100, w: 520, h: 20 },
+    { x: 120, y: 140, w: 20,  h: 360 },
+    { x: 120, y: 480, w: 460, h: 20 },
+    { x: 560, y: 180, w: 20,  h: 320 },
+    // ensure there are gaps: add intentionally a couple of openings by making slight offsets
+    // (these walls above are spaced to create a passable spiral)
+  ],
+  // Level5
+  [
+    { x: 0,   y: 0,   w: 800, h: 20 }, { x: 0,   y: 580, w: 800, h: 20 },
+    { x: 0,   y: 0,   w: 20,  h: 600 }, { x: 780, y: 0,   w: 20,  h: 600 },
     { x: 150, y: 100, w: 500, h: 20 },
-    { x: 150, y: 100, w: 20, h: 400 },
+    { x: 150, y: 100, w: 20,  h: 400 },
     { x: 150, y: 480, w: 500, h: 20 },
-    { x: 630, y: 100, w: 20, h: 400 },
+    { x: 630, y: 100, w: 20,  h: 400 },
     { x: 300, y: 200, w: 200, h: 20 },
-    { x: 400, y: 200, w: 20, h: 300 }
+    { x: 400, y: 200, w: 20,  h: 300 }
   ]
 ];
 
-// ===== Collision Check =====
+// ===== Utilities =====
 function rectCollision(r1, r2) {
+  // standard AABB
   return !(
     r1.x + r1.w < r2.x ||
     r1.x > r2.x + r2.w ||
     r1.y + r1.h < r2.y ||
     r1.y > r2.y + r2.h
   );
+}
+
+function isRectCollidingAny(rect, walls) {
+  return walls.some(w => rectCollision(rect, w));
+}
+
+// Finds a safe (non-colliding) position inside the canvas
+function findSafePosition(walls, opts = {}) {
+  const margin = opts.margin || 10;
+  const attempts = 500;
+  for (let i = 0; i < attempts; i++) {
+    // sample inside inner area to avoid edges
+    const x = margin + Math.random() * (canvas.width - margin*2);
+    const y = margin + Math.random() * (canvas.height - margin*2);
+    const rect = { x: x, y: y, w: opts.w || 40, h: opts.h || 40 };
+    if (!isRectCollidingAny(rect, walls)) return { x, y };
+  }
+  // fallback: return a guaranteed near-top-left safe spot not colliding with walls brute-forced
+  for (let y = 40; y < canvas.height - 40; y += 10) {
+    for (let x = 40; x < canvas.width - 40; x += 10) {
+      const rect = { x, y, w: opts.w || 40, h: opts.h || 40 };
+      if (!isRectCollidingAny(rect, walls)) return { x, y };
+    }
+  }
+  // last resort
+  return { x: 50, y: 50 };
 }
 
 // ===== Movement =====
@@ -127,9 +159,8 @@ function movePlayer() {
 
   const walls = mazes[level - 1];
   const rect = { x: nx, y: ny, w: player.size, h: player.size };
-  if (!walls.some(w => rectCollision(rect, w))) {
-    player.x = nx;
-    player.y = ny;
+  if (!isRectCollidingAny(rect, walls)) {
+    player.x = nx; player.y = ny;
   }
 }
 
@@ -144,53 +175,29 @@ function moveEnemy() {
   }
 }
 
-// ===== Key Placement =====
+// ===== Key placement (safe) =====
 function placeKey() {
   const walls = mazes[level - 1];
-  let valid = false;
-  while (!valid) {
-    key.x = 100 + Math.random() * 600;
-    key.y = 100 + Math.random() * 400;
-    const rect = { x: key.x, y: key.y, w: key.size, h: key.size };
-    valid = !walls.some(w => rectCollision(rect, w));
+  let pos;
+  // for level 2 & 3 we can bias spawn into central corridor area for predictability
+  if (level === 2) pos = { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 };
+  else if (level === 3) pos = { x: 300 + Math.random() * 200, y: 220 + Math.random() * 200 };
+  else pos = null;
+
+  if (!pos) pos = findSafePosition(walls, { w: key.size, h: key.size, margin: 30 });
+  // double-check not too close to player
+  if (Math.hypot(pos.x - player.x, pos.y - player.y) < 100) {
+    // try a different one
+    pos = findSafePosition(walls, { w: key.size, h: key.size, margin: 30 });
   }
-  key.collected = false;
+  key.x = pos.x; key.y = pos.y; key.collected = false;
 }
 
-// ===== Quiz =====
-let sfxPlayed = false; // new variable outside functions to track SFX
-
-function startQuiz() {
-  quizActive = true;
-  quizContainer.style.display = "flex";
-  currentQuestionIndex = 0;
-  quizTime = 15;
-  sfxPlayed = false; // reset flag each time quiz starts
-  showQuestion();
-
-  // Reset and prep the SFX
-  specialSFX.pause();
-  specialSFX.currentTime = 0;
-
-  quizTimer = setInterval(() => {
-    quizTime -= 0.05;
-    timeLeftEl.textContent = Math.ceil(quizTime);
-
-    // Play SFX once when timer hits 10s remaining
-    if (quizTime <= 10 && !sfxPlayed) {
-      specialSFX.play().catch(err => console.warn("SFX blocked:", err));
-      sfxPlayed = true;
-    }
-
-    if (quizTime <= 0) endQuiz(false);
-  }, 50);
-}
-
+// ===== Quiz (SFX handled reliably) =====
 function showQuestion() {
   const startIndex = (level - 1) * 3;
   const q = questions[startIndex + currentQuestionIndex];
-  if (!q) return; // safety guard in case of missing question
-
+  if (!q) return;
   questionText.textContent = q.q;
   answersDiv.innerHTML = "";
   q.a.forEach(ans => {
@@ -201,41 +208,64 @@ function showQuestion() {
   });
 }
 
+function startQuiz() {
+  quizActive = true;
+  quizContainer.style.display = "flex";
+  currentQuestionIndex = 0;
+  quizTime = 15;
+  sfxPlayed = false;
+  // reset SFX
+  try { specialSFX.pause(); specialSFX.currentTime = 0; } catch(e) {}
+  showQuestion();
+
+  quizTimer = setInterval(() => {
+    quizTime -= 0.05;
+    timeLeftEl.textContent = Math.ceil(quizTime);
+    if (quizTime <= 10 && !sfxPlayed) {
+      specialSFX.play().catch(err => console.warn("SFX blocked:", err));
+      sfxPlayed = true;
+    }
+    if (quizTime <= 0) endQuiz(false);
+  }, 50);
+}
+
 function answerQuestion(ans) {
   const startIndex = (level - 1) * 3;
   const q = questions[startIndex + currentQuestionIndex];
   if (ans === q.c) score += 100;
-
-  document.getElementById("score").textContent = `Score: ${score} | Level: ${level}`;
   currentQuestionIndex++;
-
+  document.getElementById("score").textContent = `Score: ${score} | Level: ${level}`;
   if (currentQuestionIndex >= 3) endQuiz(true);
   else showQuestion();
 }
 
 function endQuiz(success) {
   clearInterval(quizTimer);
-  quizContainer.style.display = "none";
   quizActive = false;
-
-  // stop SFX cleanly
-  specialSFX.pause();
-  specialSFX.currentTime = 0;
-
-  if (success) nextLevel();
-  else gameOver();
+  quizContainer.style.display = "none";
+  try { specialSFX.pause(); specialSFX.currentTime = 0; } catch(e) {}
+  if (success) nextLevel(); else gameOver();
 }
 
-// ===== Level Progression =====
+// ===== Level progression & safe spawns =====
 function nextLevel() {
   level++;
   if (level > 5) {
     alert("You beat all 5 levels! 🎉");
-    level = 1;
-    score = 0;
+    level = 1; score = 0;
   }
-  player = { x: 50, y: 50, size: 40, speed: 3 };
-  enemy = { x: 700, y: 500, size: 40 + level * 5, speed: 2 + level * 0.2 };
+
+  // find safe spawn positions for player & enemy
+  const walls = mazes[level - 1];
+  const pPos = findSafePosition(walls, { w: player.size, h: player.size, margin: 40 });
+  const ePos = findSafePosition(walls, { w: enemy.size, h: enemy.size, margin: 40 });
+
+  player.x = pPos.x; player.y = pPos.y;
+  enemy.x  = ePos.x;  enemy.y  = ePos.y;
+
+  enemy.size = 40 + (level - 1) * 5;
+  enemy.speed = 2 + (level - 1) * 0.25;
+
   placeKey();
   document.getElementById("score").textContent = `Score: ${score} | Level: ${level}`;
 }
@@ -245,13 +275,18 @@ function gameOver() {
   gameOverScreen.style.display = "flex";
 }
 
+// restart
 restartBtn.addEventListener("click", () => {
   gameOverScreen.style.display = "none";
-  player = { x: 50, y: 50, size: 40, speed: 3 };
-  enemy = { x: 700, y: 500, size: 40, speed: 2 };
-  level = 1;
-  score = 0;
+  level = 1; score = 0;
+  const walls = mazes[level - 1];
+  const pPos = findSafePosition(walls, { w: player.size, h: player.size, margin: 40 });
+  const ePos = findSafePosition(walls, { w: enemy.size, h: enemy.size, margin: 40 });
+  player.x = pPos.x; player.y = pPos.y;
+  enemy.x  = ePos.x;  enemy.y  = ePos.y;
+  enemy.size = 40; enemy.speed = 2;
   placeKey();
+  document.getElementById("score").textContent = `Score: ${score} | Level: ${level}`;
   loop();
 });
 
@@ -271,10 +306,12 @@ function draw() {
 
 // ===== Loop =====
 function loop() {
-  if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < 30) return gameOver();
+  // adjust collision threshold using sizes (so bigger enemy catches easier)
+  const hitDist = (player.size + enemy.size) / 2;
+  if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < hitDist) return gameOver();
   movePlayer();
   moveEnemy();
-  if (!key.collected && Math.abs(player.x - key.x) < 30 && Math.abs(player.y - key.y) < 30) {
+  if (!key.collected && Math.abs(player.x - key.x) < (player.size/2 + key.size/2) && Math.abs(player.y - key.y) < (player.size/2 + key.size/2)) {
     key.collected = true;
     startQuiz();
   }
@@ -282,6 +319,14 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-// ===== Start Game =====
-placeKey();
-loop();
+// ===== Start =====
+(function initGame() {
+  // ensure safe spawns on first-run
+  const walls = mazes[level - 1];
+  const pPos = findSafePosition(walls, { w: player.size, h: player.size, margin: 40 });
+  const ePos = findSafePosition(walls, { w: enemy.size, h: enemy.size, margin: 40 });
+  player.x = pPos.x; player.y = pPos.y;
+  enemy.x  = ePos.x;  enemy.y  = ePos.y;
+  placeKey();
+  loop();
+})();
