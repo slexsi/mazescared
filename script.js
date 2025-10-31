@@ -17,6 +17,7 @@ let quizActive = false;
 let quizTimer = null;
 let quizTime = 15;
 let currentQuestionIndex = 0;
+let sfxPlayed = false;
 
 const playerImg = new Image();
 playerImg.src = "player.png";
@@ -158,21 +159,30 @@ function placeKey() {
 }
 
 // ===== Quiz =====
+let sfxPlayed = false; // new variable outside functions to track SFX
+
 function startQuiz() {
   quizActive = true;
   quizContainer.style.display = "flex";
   currentQuestionIndex = 0;
   quizTime = 15;
-  specialSFX.played = false;
+  sfxPlayed = false; // reset flag each time quiz starts
   showQuestion();
+
+  // Reset and prep the SFX
+  specialSFX.pause();
+  specialSFX.currentTime = 0;
 
   quizTimer = setInterval(() => {
     quizTime -= 0.05;
     timeLeftEl.textContent = Math.ceil(quizTime);
-    if (quizTime <= 10 && !specialSFX.played) {
-      specialSFX.play().catch(() => {});
-      specialSFX.played = true;
+
+    // Play SFX once when timer hits 10s remaining
+    if (quizTime <= 10 && !sfxPlayed) {
+      specialSFX.play().catch(err => console.warn("SFX blocked:", err));
+      sfxPlayed = true;
     }
+
     if (quizTime <= 0) endQuiz(false);
   }, 50);
 }
@@ -180,6 +190,8 @@ function startQuiz() {
 function showQuestion() {
   const startIndex = (level - 1) * 3;
   const q = questions[startIndex + currentQuestionIndex];
+  if (!q) return; // safety guard in case of missing question
+
   questionText.textContent = q.q;
   answersDiv.innerHTML = "";
   q.a.forEach(ans => {
@@ -194,8 +206,10 @@ function answerQuestion(ans) {
   const startIndex = (level - 1) * 3;
   const q = questions[startIndex + currentQuestionIndex];
   if (ans === q.c) score += 100;
+
   document.getElementById("score").textContent = `Score: ${score} | Level: ${level}`;
   currentQuestionIndex++;
+
   if (currentQuestionIndex >= 3) endQuiz(true);
   else showQuestion();
 }
@@ -204,6 +218,11 @@ function endQuiz(success) {
   clearInterval(quizTimer);
   quizContainer.style.display = "none";
   quizActive = false;
+
+  // stop SFX cleanly
+  specialSFX.pause();
+  specialSFX.currentTime = 0;
+
   if (success) nextLevel();
   else gameOver();
 }
