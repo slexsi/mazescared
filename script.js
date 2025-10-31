@@ -17,7 +17,6 @@ let quizActive = false;
 let quizTimer = null;
 let quizTime = 15;
 let currentQuestionIndex = 0;
-let sfxPlayed = false;
 
 const playerImg = new Image();
 playerImg.src = "player.png";
