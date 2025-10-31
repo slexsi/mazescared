@@ -58,16 +58,21 @@ const mazes = [
     { x: 630, y: 250, w: 20, h: 250 },
     { x: 300, y: 250, w: 350, h: 20 }
   ],
-  // Level 3 - box maze
+  // Level 3 - box maze (now with openings)
   [
     { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
     { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 },
-    { x: 100, y: 100, w: 600, h: 20 },
-    { x: 100, y: 100, w: 20, h: 400 },
-    { x: 100, y: 480, w: 600, h: 20 },
-    { x: 680, y: 100, w: 20, h: 400 },
+  
+    // outer rectangle walls with gaps (top-left & bottom-right openings)
+    { x: 100, y: 100, w: 520, h: 20 },              // top wall (gap on right)
+    { x: 100, y: 100, w: 20, h: 280 },              // left wall (gap bottom)
+    { x: 100, y: 480, w: 500, h: 20 },              // bottom wall (gap left)
+    { x: 680, y: 100, w: 20, h: 400 },              // right wall
+  
+    // center divider
     { x: 250, y: 250, w: 300, h: 20 }
   ],
+
   // Level 4 - more walls, still passable
   [
     { x: 0, y: 0, w: 800, h: 20 }, { x: 0, y: 580, w: 800, h: 20 },
