@@ -1,4 +1,4 @@
-// ===== script.js (Full Rewrite: Correct Answer Feedback + 1.5s Head Start per Level) =====
+// ===== script.js (Full Rewrite: Correct Answer Feedback + 1.5s Head Start per Level + Increasing Enemy Size) =====
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -102,7 +102,6 @@ const mazes = [
 function rectCollision(r1,r2){
   return !(r1.x+r1.w<r2.x||r1.x>r2.x+r2.w||r1.y+r1.h<r2.y||r1.y>r2.y+r2.h);
 }
-
 function isRectCollidingAny(rect,walls){ return walls.some(w=>rectCollision(rect,w)); }
 
 function findSafePosition(walls, opts={}) {
@@ -211,19 +210,21 @@ let headStartStartTime = null;
 
 // ===== Level progression =====
 function nextLevel(){
-  level++; if(level>5){ alert("You beat all 5 levels! 🎉"); level=1; score=0; }
+  level++; 
+  if(level>5){ alert("You beat all 5 levels! 🎉"); level=1; score=0; }
   const walls=mazes[level-1];
   const pPos=findSafePosition(walls,{w:player.size,h:player.size,margin:40});
   const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
   player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
-  enemy.size=40+(level-1)*5; enemy.speed=2+(level-1)*0.25;
+
+  // ===== Increasing enemy size significantly for higher levels =====
+  enemy.size = 40 + level*10; // increase by 10 per level
+  enemy.speed = 2 + (level-1)*0.25;
+
   placeKey(); document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
 
-  // reset head start
   headStartActive = true;
   headStartStartTime = null;
-
-  // play sfx immediately
   specialSFX.play().catch(()=>{});
 }
 
@@ -232,7 +233,8 @@ function gameOver(){ gameOverScreen.style.display="flex"; }
 
 // ===== Restart =====
 restartBtn.addEventListener("click",()=>{
-  gameOverScreen.style.display="none"; level=1; score=0; enemy.size=40; enemy.speed=2;
+  gameOverScreen.style.display="none"; 
+  level=1; score=0; enemy.size=40; enemy.speed=2;
   const walls=mazes[level-1];
   const pPos=findSafePosition(walls,{w:player.size,h:player.size,margin:40});
   const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
