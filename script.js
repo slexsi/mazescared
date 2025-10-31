@@ -49,36 +49,39 @@ specialSFX.load();
 const mazes = [
   // Level 1
   [
-    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20},
+    {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
     {x:150, y:100, w:500, h:20}, {x:150, y:200, w:20, h:300}, {x:200, y:400, w:400, h:20},
   ],
-  // Level 2 – widened corridors
-[
-  {x:0, y:0, w:800, h:20},    // top
-  {x:0, y:580, w:800, h:20},  // bottom
-  {x:0, y:0, w:20, h:600},    // left
-  {x:780, y:0, w:20, h:600},  // right
-  {x:50, y:100, w:700, h:20}, // horizontal top wall
-  {x:50, y:150, w:20, h:400}, // vertical left wall
-  {x:730, y:150, w:20, h:400},// vertical right wall
-  {x:50, y:550, w:700, h:20}  // horizontal bottom wall
-],
+  // Level 2 – fixed, fully reachable corridor
+  [
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20},
+    {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:150, y:100, w:500, h:20},  // top horizontal
+    {x:150, y:480, w:500, h:20},  // bottom horizontal
+    {x:150, y:100, w:20, h:380},  // left vertical
+    {x:630, y:100, w:20, h:380}   // right vertical
+  ],
   // Level 3
   [
-    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:150, y:80, w:500, h:20}, {x:150, y:120, w:20, h:400}, {x:150, y:500, w:500, h:20}, {x:630, y:120, w:20, h:380},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20},
+    {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:150, y:80, w:500, h:20}, {x:150, y:120, w:20, h:400},
+    {x:150, y:500, w:500, h:20}, {x:630, y:120, w:20, h:380},
   ],
   // Level 4
   [
-    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:100, y:100, w:600, h:20}, {x:100, y:150, w:20, h:400}, {x:100, y:500, w:600, h:20}, {x:680, y:150, w:20, h:370},
-    {x:250, y:200, w:300, h:20},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20},
+    {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:100, y:100, w:600, h:20}, {x:100, y:150, w:20, h:400},
+    {x:100, y:500, w:600, h:20}, {x:680, y:150, w:20, h:370}, {x:250, y:200, w:300, h:20},
   ],
   // Level 5
   [
-    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
-    {x:100, y:100, w:600, h:20}, {x:100, y:150, w:20, h:400}, {x:100, y:500, w:600, h:20}, {x:680, y:150, w:20, h:370},
-    {x:200, y:250, w:400, h:20}, {x:200, y:350, w:20, h:100},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20},
+    {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:100, y:100, w:600, h:20}, {x:100, y:150, w:20, h:400},
+    {x:100, y:500, w:600, h:20}, {x:680, y:150, w:20, h:370}, {x:200, y:250, w:400, h:20}, {x:200, y:350, w:20, h:100},
   ],
 ];
 
@@ -121,9 +124,9 @@ function placeKey(){
   const walls = mazes[level-1];
   let valid = false;
   while(!valid){
-    if(level === 2){ // fixed spawn for stage 2
-      key.x = 150 + Math.random()*500;
-      key.y = 200 + Math.random()*200;
+    if(level === 2){ // safe corridor
+      key.x = 200 + Math.random()*400;
+      key.y = 150 + Math.random()*300;
     } else {
       key.x = 50 + Math.random()*700;
       key.y = 50 + Math.random()*500;
@@ -146,8 +149,7 @@ function draw(){
   ctx.fillStyle='gray';
   walls.forEach(w=>ctx.fillRect(w.x,w.y,w.w,w.h));
 
-  if(!key.collected) ctx.fillStyle='gold';
-  ctx.fillRect(key.x,key.y,key.size,key.size);
+  if(!key.collected){ ctx.fillStyle='gold'; ctx.fillRect(key.x,key.y,key.size,key.size); }
 
   ctx.drawImage(playerImg,player.x,player.y,player.size,player.size);
   ctx.drawImage(enemyImg,enemy.x,enemy.y,enemy.size,enemy.size);
