@@ -24,23 +24,47 @@ enemyImg.src = "enemy.png";
 let player = { x: 50, y: 50, size: 40, speed: 3 };
 let enemy = { x: 500, y: 50, size: 40, speed: 1.5 };
 let key = { x: 300, y: 200, size: 30, collected: false };
+let level = 1;
 let score = 0;
 let running = false;
 let quizActive = false;
 let keysDown = {};
 
+// === MAZE WALLS ===
+let walls = [
+  { x: 0, y: 0, w: 600, h: 10 },
+  { x: 0, y: 0, w: 10, h: 400 },
+  { x: 0, y: 390, w: 600, h: 10 },
+  { x: 590, y: 0, w: 10, h: 400 },
+  { x: 100, y: 100, w: 400, h: 10 },
+  { x: 100, y: 200, w: 10, h: 100 },
+  { x: 200, y: 300, w: 300, h: 10 },
+];
+
 // === QUIZ DATA ===
 const quizQuestions = [
-  { question: "1 + 1 = ?", answers: ["1", "2", "3"], correct: "2" },
-  { question: "Color of sky?", answers: ["Red", "Green", "Blue"], correct: "Blue" },
-  { question: "Capital of France?", answers: ["Paris", "London", "Rome"], correct: "Paris" },
+  [
+    { question: "2 + 2 = ?", answers: ["3", "4", "5"], correct: "4" },
+    { question: "Color of grass?", answers: ["Blue", "Green", "Yellow"], correct: "Green" },
+    { question: "Capital of Japan?", answers: ["Tokyo", "Osaka", "Beijing"], correct: "Tokyo" },
+  ],
+  [
+    { question: "5 x 2 = ?", answers: ["7", "10", "12"], correct: "10" },
+    { question: "Opposite of hot?", answers: ["Cold", "Warm", "Wet"], correct: "Cold" },
+    { question: "Planet we live on?", answers: ["Mars", "Earth", "Venus"], correct: "Earth" },
+  ],
+  [
+    { question: "10 / 2 = ?", answers: ["2", "5", "8"], correct: "5" },
+    { question: "Color of banana?", answers: ["Green", "Yellow", "Red"], correct: "Yellow" },
+    { question: "Capital of France?", answers: ["London", "Paris", "Berlin"], correct: "Paris" },
+  ]
 ];
 
 // === EVENT HANDLERS ===
 document.addEventListener("keydown", (e) => (keysDown[e.key] = true));
 document.addEventListener("keyup", (e) => (keysDown[e.key] = false));
 
-// Start music on user interaction (autoplay fix)
+// Start music on user interaction
 document.addEventListener(
   "click",
   () => {
@@ -50,16 +74,32 @@ document.addEventListener(
   { once: true }
 );
 
-// === PLAYER MOVEMENT ===
+// === MOVEMENT & COLLISION ===
 function movePlayer() {
   if (quizActive) return;
+
+  const oldX = player.x;
+  const oldY = player.y;
+
   if (keysDown["ArrowUp"] || keysDown["w"]) player.y -= player.speed;
   if (keysDown["ArrowDown"] || keysDown["s"]) player.y += player.speed;
   if (keysDown["ArrowLeft"] || keysDown["a"]) player.x -= player.speed;
   if (keysDown["ArrowRight"] || keysDown["d"]) player.x += player.speed;
+
+  // Wall collision
+  for (let w of walls) {
+    if (
+      player.x < w.x + w.w &&
+      player.x + player.size > w.x &&
+      player.y < w.y + w.h &&
+      player.y + player.size > w.y
+    ) {
+      player.x = oldX;
+      player.y = oldY;
+    }
+  }
 }
 
-// === ENEMY MOVEMENT ===
 function moveEnemy() {
   if (quizActive) return;
   const dx = player.x - enemy.x;
@@ -71,7 +111,6 @@ function moveEnemy() {
   }
 }
 
-// === COLLISIONS ===
 function checkKey() {
   if (!key.collected && Math.abs(player.x - key.x) < 30 && Math.abs(player.y - key.y) < 30) {
     key.collected = true;
@@ -88,6 +127,10 @@ function checkEnemyCollision() {
 // === DRAWING ===
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw maze
+  ctx.fillStyle = "gray";
+  for (let w of walls) ctx.fillRect(w.x, w.y, w.w, w.h);
 
   // Draw key
   if (!key.collected) {
@@ -108,6 +151,11 @@ function draw() {
     ctx.fillStyle = "red";
     ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
   }
+
+  // Level text
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("Level: " + level, 10, 20);
 }
 
 // === QUIZ SYSTEM ===
@@ -127,7 +175,7 @@ function startQuiz() {
 
 function showQuestion(index) {
   quizTab.innerHTML = "";
-  const q = quizQuestions[index];
+  const q = quizQuestions[level - 1][index];
   const p = document.createElement("p");
   p.textContent = q.question;
   quizTab.appendChild(p);
@@ -166,13 +214,13 @@ function startQuizTimer() {
 }
 
 function answerQuestion(ans) {
-  const q = quizQuestions[currentQuestionIndex];
+  const q = quizQuestions[level - 1][currentQuestionIndex];
   if (ans === q.correct) {
     score += 100;
     totalScoreEl.textContent = score;
   }
   currentQuestionIndex++;
-  if (currentQuestionIndex >= quizQuestions.length) endQuiz();
+  if (currentQuestionIndex >= quizQuestions[level - 1].length) endQuiz();
   else showQuestion(currentQuestionIndex);
 }
 
@@ -180,13 +228,31 @@ function endQuiz() {
   quizActive = false;
   quizContainer.style.display = "none";
   canvas.style.display = "block";
+
+  // Progress to next level
+  level++;
+  if (level > quizQuestions.length) {
+    gameOver(true); // win condition
+    return;
+  }
+
+  // Reset positions and make harder
+  player.x = 50;
+  player.y = 50;
+  enemy.x = 500;
+  enemy.y = 50;
+  key = { x: 100 + Math.random() * 400, y: 100 + Math.random() * 200, size: 30, collected: false };
+  enemy.speed += 0.5;
 }
 
 // === GAME OVER ===
-function gameOver() {
+function gameOver(win = false) {
   running = false;
   canvas.style.display = "none";
   gameOverContainer.style.display = "block";
+  gameOverContainer.querySelector("p").textContent = win
+    ? "🎉 You Win! Final Score: " + score
+    : "Game Over! Final Score: " + score;
   bgSong.pause();
 }
 
@@ -195,6 +261,7 @@ restartBtn.addEventListener("click", () => {
   player = { x: 50, y: 50, size: 40, speed: 3 };
   enemy = { x: 500, y: 50, size: 40, speed: 1.5 };
   key = { x: 300, y: 200, size: 30, collected: false };
+  level = 1;
   score = 0;
   totalScoreEl.textContent = score;
   running = true;
@@ -205,7 +272,7 @@ restartBtn.addEventListener("click", () => {
   requestAnimationFrame(loop);
 });
 
-// === GAME LOOP ===
+// === MAIN LOOP ===
 function loop() {
   if (!running) return;
   movePlayer();
@@ -216,7 +283,7 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-// === START AFTER IMAGES LOADED ===
+// === START GAME ===
 let imagesLoaded = 0;
 playerImg.onload = enemyImg.onload = () => {
   imagesLoaded++;
