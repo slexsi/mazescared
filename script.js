@@ -1,4 +1,4 @@
-// ===== script.js (Full Rewrite: Correct Answer Feedback + 1.5s Head Start + Enemy Scaling + Open Start) =====
+// ===== script.js (Full Rewrite: Playable Level 4 & 5 + Head Start + Enemy Scaling) =====
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -74,35 +74,31 @@ const mazes = [
     { x:100,y:480,w:500,h:20 },{ x:680,y:100,w:20,h:400 },
     { x:250,y:250,w:300,h:20 }
   ],
-  // Level4 Spiral with open start
+  // Level4 Spiral with clear opening
   [
     { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
     { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    // shifted down to leave top-left opening
-    { x:60,y:80,w:680,h:20 },
-    { x:60,y:60,w:20,h:460 },
-    { x:60,y:500,w:640,h:20 },
-    { x:680,y:100,w:20,h:420 },
-    { x:100,y:100,w:600,h:20 },
-    { x:100,y:100,w:20,h:380 },
-    { x:100,y:460,w:520,h:20 },
-    { x:600,y:140,w:20,h:340 },
-    { x:140,y:140,w:480,h:20 },
-    { x:140,y:140,w:20,h:300 },
-    { x:140,y:420,w:440,h:20 },
+    // clear top-left corridor
+    { x:100,y:80,w:680,h:20 },
+    { x:100,y:80,w:20,h:420 },
+    { x:100,y:480,w:580,h:20 },
+    { x:660,y:100,w:20,h:380 },
+    { x:140,y:140,w:520,h:20 },
+    { x:140,y:140,w:20,h:340 },
+    { x:140,y:440,w:460,h:20 },
     { x:560,y:180,w:20,h:260 }
   ],
-  // Level5 with open start
+  // Level5 with clear opening
   [
     { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
     { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    // shifted down to leave top-left opening
-    { x:150,y:120,w:500,h:20 },
-    { x:150,y:120,w:20,h:380 },
-    { x:150,y:480,w:500,h:20 },
+    // clear top-left corridor
+    { x:120,y:100,w:520,h:20 },
+    { x:120,y:100,w:20,h:380 },
+    { x:120,y:480,w:500,h:20 },
     { x:630,y:100,w:20,h:400 },
-    { x:300,y:200,w:200,h:20 },
-    { x:400,y:200,w:20,h:300 }
+    { x:300,y:220,w:200,h:20 },
+    { x:400,y:220,w:20,h:300 }
   ]
 ];
 
@@ -151,10 +147,7 @@ function moveEnemy(){
 // ===== Key placement =====
 function placeKey(){
   const walls=mazes[level-1];
-  let pos=null;
-  if(level===2) pos={x:300+Math.random()*200,y:200+Math.random()*200};
-  else if(level===3) pos={x:300+Math.random()*200,y:220+Math.random()*200};
-  if(!pos) pos=findSafePosition(walls,{w:key.size,h:key.size,margin:30});
+  let pos=findSafePosition(walls,{w:key.size,h:key.size,margin:30});
   if(Math.hypot(pos.x-player.x,pos.y-player.y)<100) pos=findSafePosition(walls,{w:key.size,h:key.size,margin:30});
   key.x=pos.x; key.y=pos.y; key.collected=false;
 }
@@ -219,17 +212,14 @@ function nextLevel(){
   const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
   player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
 
-  // scale enemy size and speed
-  enemy.size=40 + (level-1)*20; // bigger increase
+  enemy.size=40 + (level-1)*20; // bigger scaling
   enemy.speed=2 + (level-1)*0.5;
 
   placeKey(); 
   document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
 
-  // reset head start
   headStartActive = true;
   headStartStartTime = null;
-
   specialSFX.play().catch(()=>{});
 }
 
@@ -273,7 +263,6 @@ function loop(timestamp){
 
   movePlayer();
 
-  // enemy moves only after head start
   if(!headStartActive || elapsed >= headStartDuration){
     headStartActive = false;
     moveEnemy();
