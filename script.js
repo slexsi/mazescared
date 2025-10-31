@@ -35,59 +35,37 @@ let keysDown = {};
 document.addEventListener("keydown", e => keysDown[e.key] = true);
 document.addEventListener("keyup", e => keysDown[e.key] = false);
 
-// Start music immediately
+// Start background music immediately
 bgMusic.volume = 0.5;
 bgMusic.play().catch(()=>{document.addEventListener("keydown", ()=>bgMusic.play(), {once:true});});
 
-// ===== Maze Layouts =====
+// ===== Maze Layouts with boundary walls =====
 const mazes = [
   // Level 1
   [
-    {x:100, y:100, w:600, h:20},
-    {x:100, y:200, w:20, h:300},
-    {x:200, y:300, w:500, h:20},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:100, y:100, w:600, h:20}, {x:100, y:200, w:20, h:300}, {x:200, y:300, w:500, h:20},
   ],
   // Level 2
   [
-    {x:50, y:50, w:700, h:20},
-    {x:50, y:50, w:20, h:500},
-    {x:50, y:530, w:700, h:20},
-    {x:730, y:50, w:20, h:500},
-    {x:150, y:150, w:500, h:20},
-    {x:150, y:250, w:20, h:200},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:50, y:50, w:700, h:20}, {x:50, y:50, w:20, h:500}, {x:50, y:530, w:700, h:20}, {x:730, y:50, w:20, h:500},
+    {x:150, y:150, w:500, h:20}, {x:150, y:250, w:20, h:200},
   ],
   // Level 3
   [
-    {x:0, y:0, w:800, h:20},
-    {x:0, y:580, w:800, h:20},
-    {x:0, y:0, w:20, h:600},
-    {x:780, y:0, w:20, h:600},
-    {x:100, y:100, w:600, h:20},
-    {x:100, y:200, w:20, h:300},
-    {x:200, y:300, w:500, h:20},
-    {x:680, y:200, w:20, h:200},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:100, y:100, w:600, h:20}, {x:100, y:200, w:20, h:300}, {x:200, y:300, w:500, h:20}, {x:680, y:200, w:20, h:200},
   ],
   // Level 4
   [
-    {x:0, y:0, w:800, h:20},
-    {x:0, y:580, w:800, h:20},
-    {x:0, y:0, w:20, h:600},
-    {x:780, y:0, w:20, h:600},
-    {x:50, y:100, w:700, h:20},
-    {x:50, y:200, w:20, h:300},
-    {x:100, y:400, w:600, h:20},
-    {x:680, y:200, w:20, h:200},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:50, y:100, w:700, h:20}, {x:50, y:200, w:20, h:300}, {x:100, y:400, w:600, h:20}, {x:680, y:200, w:20, h:200},
   ],
   // Level 5
   [
-    {x:0, y:0, w:800, h:20},
-    {x:0, y:580, w:800, h:20},
-    {x:0, y:0, w:20, h:600},
-    {x:780, y:0, w:20, h:600},
-    {x:50, y:100, w:700, h:20},
-    {x:50, y:200, w:20, h:300},
-    {x:100, y:400, w:600, h:20},
-    {x:680, y:200, w:20, h:200},
+    {x:0, y:0, w:800, h:20}, {x:0, y:580, w:800, h:20}, {x:0, y:0, w:20, h:600}, {x:780, y:0, w:20, h:600},
+    {x:50, y:100, w:700, h:20}, {x:50, y:200, w:20, h:300}, {x:100, y:400, w:600, h:20}, {x:680, y:200, w:20, h:200},
     {x:300, y:250, w:200, h:20},
   ],
 ];
@@ -101,7 +79,6 @@ function movePlayer(){
   if(keysDown['ArrowLeft'] || keysDown['a']) nx -= player.speed;
   if(keysDown['ArrowRight'] || keysDown['d']) nx += player.speed;
 
-  // Collision with walls
   const walls = mazes[level-1];
   const playerRect = {x:nx, y:ny, w:player.size, h:player.size};
   let colliding = walls.some(w => rectCollision(playerRect, w));
@@ -110,7 +87,7 @@ function movePlayer(){
 
 function moveEnemy(){
   if(quizActive) return;
-  // Enemy moves directly towards player, ignoring walls
+  // Enemy ignores walls
   let dx = player.x - enemy.x;
   let dy = player.y - enemy.y;
   let dist = Math.hypot(dx, dy);
@@ -143,15 +120,13 @@ function checkKey(){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // draw maze
   const walls = mazes[level-1];
   ctx.fillStyle='gray';
   walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
 
-  // key
-  if(!key.collected){ ctx.fillStyle='gold'; ctx.fillRect(key.x,key.y,key.size,key.size); }
+  if(!key.collected) ctx.fillStyle='gold';
+  ctx.fillRect(key.x,key.y,key.size,key.size);
 
-  // player & enemy
   ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
   ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.size, enemy.size);
 }
@@ -184,7 +159,7 @@ function startQuiz(){
 }
 
 function showQuestion(){
-  const startIndex = (level-1)*3; // pick 3 questions per level
+  const startIndex = (level-1)*3;
   const q = questions[startIndex + currentQuestionIndex];
   questionText.textContent = q.q;
   answersDiv.innerHTML="";
@@ -201,7 +176,7 @@ function answerQuestion(ans){
   const q = questions[startIndex + currentQuestionIndex];
   if(ans===q.c){ score+=100; document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`; }
   currentQuestionIndex++;
-  if(currentQuestionIndex>=3){ endQuiz(true); } // 3 questions per key
+  if(currentQuestionIndex>=3){ endQuiz(true); }
   else showQuestion();
 }
 
@@ -219,8 +194,6 @@ function nextLevel(){
   key.collected=false;
   player.x=50; player.y=50;
   enemy.x=700; enemy.y=500;
-
-  // optional: reposition key per level
   key.x = 100 + Math.random()*600;
   key.y = 50 + Math.random()*500;
 }
