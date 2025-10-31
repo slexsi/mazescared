@@ -28,9 +28,9 @@ enemyImg.src = "enemy.png";
 // Player, Enemy & Key
 let player = { x:50, y:50, size:40, speed:3 };
 let enemy = { x:700, y:500, size:40, speed:2 };
-let key = { x:400, y:300, size:30, collected:false };
+let key = { x:0, y:0, size:30, collected:false };
 
-// Key movement input
+// Movement input
 let keysDown = {};
 document.addEventListener("keydown", e => keysDown[e.key] = true);
 document.addEventListener("keyup", e => keysDown[e.key] = false);
@@ -39,7 +39,7 @@ document.addEventListener("keyup", e => keysDown[e.key] = false);
 bgMusic.volume = 0.5;
 bgMusic.play().catch(()=>{document.addEventListener("keydown", ()=>bgMusic.play(), {once:true});});
 
-// ===== Maze Layouts with boundary walls =====
+// ===== Maze Layouts =====
 const mazes = [
   // Level 1
   [
@@ -70,7 +70,16 @@ const mazes = [
   ],
 ];
 
-// ===== Movement & Collision =====
+// ===== Collision detection with buffer =====
+function rectCollision(r1, r2){
+  const buffer = 1; // small margin to prevent getting stuck
+  return !(r1.x + r1.w - buffer < r2.x ||
+           r1.x + buffer > r2.x + r2.w ||
+           r1.y + r1.h - buffer < r2.y ||
+           r1.y + buffer > r2.y + r2.h);
+}
+
+// ===== Movement =====
 function movePlayer(){
   if(quizActive) return;
   let nx = player.x, ny = player.y;
@@ -81,8 +90,9 @@ function movePlayer(){
 
   const walls = mazes[level-1];
   const playerRect = {x:nx, y:ny, w:player.size, h:player.size};
-  let colliding = walls.some(w => rectCollision(playerRect, w));
-  if(!colliding){ player.x = nx; player.y = ny; }
+  if(!walls.some(w => rectCollision(playerRect, w))){
+    player.x = nx; player.y = ny;
+  }
 }
 
 function moveEnemy(){
@@ -97,14 +107,20 @@ function moveEnemy(){
   }
 }
 
-function rectCollision(r1, r2){
-  return !(r1.x + r1.w < r2.x ||
-           r1.x > r2.x + r2.w ||
-           r1.y + r1.h < r2.y ||
-           r1.y > r2.y + r2.h);
+// ===== Key placement avoiding walls =====
+function placeKey(){
+  const walls = mazes[level-1];
+  let valid = false;
+  while(!valid){
+    key.x = 50 + Math.random() * 700;
+    key.y = 50 + Math.random() * 500;
+    const keyRect = {x:key.x, y:key.y, w:key.size, h:key.size};
+    valid = !walls.some(w => rectCollision(keyRect, w));
+  }
+  key.collected = false;
 }
 
-// ===== Key Collision =====
+// ===== Collision =====
 function checkCollision(a,b){
   return (Math.abs(a.x-b.x)<30 && Math.abs(a.y-b.y)<30);
 }
@@ -119,10 +135,9 @@ function checkKey(){
 // ===== Draw =====
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
   const walls = mazes[level-1];
   ctx.fillStyle='gray';
-  walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+  walls.forEach(w => ctx.fillRect(w.x,w.y,w.w,w.h));
 
   if(!key.collected) ctx.fillStyle='gold';
   ctx.fillRect(key.x,key.y,key.size,key.size);
@@ -165,7 +180,7 @@ function showQuestion(){
   answersDiv.innerHTML="";
   q.a.forEach(ans=>{
     const btn = document.createElement("button");
-    btn.textContent = ans;
+    btn.textContent=ans;
     btn.onclick=()=>answerQuestion(ans);
     answersDiv.appendChild(btn);
   });
@@ -191,11 +206,9 @@ function endQuiz(success){
 function nextLevel(){
   level++;
   if(level>5){ alert("You win!"); level=1; score=0; }
-  key.collected=false;
   player.x=50; player.y=50;
   enemy.x=700; enemy.y=500;
-  key.x = 100 + Math.random()*600;
-  key.y = 50 + Math.random()*500;
+  placeKey();
 }
 
 // ===== Game Over =====
@@ -207,12 +220,12 @@ restartBtn.addEventListener("click",()=>{
   gameOverScreen.style.display='none';
   player={x:50,y:50,size:40,speed:3};
   enemy={x:700,y:500,size:40,speed:2};
-  key.collected=false;
-  score=0;
-  level=1;
+  level=1; score=0;
   document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
+  placeKey();
   loop();
 });
 
 // ===== Start Game =====
+placeKey();
 loop();
