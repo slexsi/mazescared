@@ -88,18 +88,17 @@ const mazes = [
     { x:250,y:200,w:20,h:200 },
     { x:250,y:400,w:350,h:20 }
   ],
-  // Level 5 – Open arena with cross
+// Level 5 – Easier open arena
   [
-    { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
-    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    // Cross pattern
-    { x:200,y:280,w:400,h:20 },
-    { x:400,y:120,w:20,h:360 },
-    // Outer box edges for some structure
-    { x:150,y:100,w:500,h:20 },
-    { x:150,y:480,w:500,h:20 },
-    { x:150,y:100,w:20,h:400 },
-    { x:630,y:100,w:20,h:400 }
+    { x:0,y:0,w:800,h:20 }, { x:0,y:580,w:800,h:20 },
+    { x:0,y:0,w:20,h:600 }, { x:780,y:0,w:20,h:600 },
+    // Few simple obstacles for shape
+    { x:150,y:150,w:500,h:20 },
+    { x:150,y:430,w:500,h:20 },
+    { x:150,y:150,w:20,h:300 },
+    { x:630,y:150,w:20,h:300 },
+    // small center pillar for fun
+    { x:380,y:250,w:40,h:100 }
   ]
 ];
 
