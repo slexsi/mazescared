@@ -1,298 +1,294 @@
-// ===== script.js (Full Rewrite: Playable + Quiz + Head Start + Enemy Scaling) =====
+// ===== Canvas Setup =====
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+const bgImage = new Image();
+bgImage.src = "background.png"; // your outer background image
+
+// ===== Player & Enemy Setup =====
+let player = { x: 50, y: 50, size: 32, speed: 4 };
+let enemy = { x: 700, y: 500, size: 40, speed: 1.5 };
+let key = { x: 0, y: 0, size: 20 };
+let walls = [];
+let level = 1;
+let score = 0;
+let quizActive = false;
+let keyCollected = false;
+let gameRunning = true;
+let headStart = true;
+
+// ===== DOM Elements =====
 const quizContainer = document.getElementById("quizContainer");
 const questionText = document.getElementById("questionText");
 const answersDiv = document.getElementById("answers");
 const timeLeftEl = document.getElementById("timeLeft");
-const gameOverScreen = document.getElementById("gameOverScreen");
-const restartBtn = document.getElementById("restartBtn");
-
 const bgMusic = document.getElementById("bgMusic");
 const specialSFX = document.getElementById("specialSFX");
 
-let score = 0;
-let level = 1;
-let quizActive = false;
-let quizTimer = null;
-let quizTime = 15;
-let currentQuestionIndex = 0;
+// ===== Input Control =====
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
 
-// Replace with your own images
-const playerImg = new Image(); playerImg.src = "player.png";
-const enemyImg = new Image(); enemyImg.src = "enemy.png";
-
-// Player & enemy stats
-let player = { x: 50, y: 50, size: 40, speed: 3, hitbox: 25 };
-let enemy  = { x: 700, y: 500, size: 40, speed: 2 };
-let key    = { x: 0, y: 0, size: 30, collected: false };
-
-let keysDown = {};
-document.addEventListener("keydown", e => keysDown[e.key] = true);
-document.addEventListener("keyup", e => keysDown[e.key] = false);
-
-// ===== Audio Unlock =====
-function unlockAudioOnFirstInteraction() {
-  function unlock() {
-    bgMusic.play().catch(()=>{});
-    specialSFX.play().then(() => specialSFX.pause()).catch(()=>{});
-    document.removeEventListener("click", unlock);
-    document.removeEventListener("keydown", unlock);
-  }
-  document.addEventListener("click", unlock, { once: true });
-  document.addEventListener("keydown", unlock, { once: true });
-}
-unlockAudioOnFirstInteraction();
-bgMusic.volume = 0.5; bgMusic.loop = true; bgMusic.play().catch(()=>{});
-specialSFX.load();
-let sfxPlayed = false;
-
-// ===== Mazes (with openings in Level 4 & 5) =====
+// ===== Maze Layouts =====
 const mazes = [
-  // Level1
+  // Level 1
   [
-    { x:0,y:0,w:800,h:20},{ x:0,y:580,w:800,h:20 },
-    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    { x:200,y:150,w:400,h:20 },
-    { x:200,y:300,w:400,h:20 },
-    { x:200,y:450,w:400,h:20 }
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,1,1,1,0,1,1,1,1,0],
+    [0,1,0,1,0,1,0,0,1,0],
+    [0,1,0,1,1,1,1,0,1,0],
+    [0,1,0,0,0,0,1,0,1,0],
+    [0,1,1,1,1,0,1,1,1,0],
+    [0,0,0,0,1,0,0,0,1,0],
+    [0,1,1,1,1,1,1,0,1,0],
+    [0,1,0,0,0,0,1,1,1,0],
+    [0,0,0,0,0,0,0,0,0,0],
   ],
-  // Level2
+  // Level 2 (fixed & simpler)
   [
-    { x:0,y:0,w:800,h:20},{ x:0,y:580,w:800,h:20 },
-    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    { x:150,y:100,w:500,h:20 },
-    { x:150,y:100,w:20,h:380 },
-    { x:150,y:480,w:500,h:20 },
-    { x:630,y:250,w:20,h:250 },
-    { x:300,y:250,w:350,h:20 }
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,0,0,0,0,0,1,0],
+    [0,1,1,1,1,1,1,0,1,0],
+    [0,1,0,0,1,0,1,0,1,0],
+    [0,1,1,0,1,1,1,1,1,0],
+    [0,0,1,0,0,0,0,0,1,0],
+    [0,1,1,1,1,1,1,0,1,0],
+    [0,1,0,0,0,0,1,1,1,0],
+    [0,0,0,0,0,0,0,0,0,0],
   ],
-  // Level3
+  // Level 3
   [
-    { x:0,y:0,w:800,h:20},{ x:0,y:580,w:800,h:20 },
-    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    { x:100,y:100,w:520,h:20 },{ x:100,y:100,w:20,h:280 },
-    { x:100,y:480,w:500,h:20 },{ x:680,y:100,w:20,h:400 },
-    { x:250,y:250,w:300,h:20 }
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,0,0,0,0,0,1,0],
+    [0,1,1,1,1,1,1,0,1,0],
+    [0,1,0,1,0,0,1,0,1,0],
+    [0,1,1,1,1,0,1,1,1,0],
+    [0,0,0,0,1,0,0,0,1,0],
+    [0,1,1,1,1,1,1,0,1,0],
+    [0,1,0,0,0,0,1,1,1,0],
+    [0,0,0,0,0,0,0,0,0,0],
   ],
-  // Level 4 – Simplified spiral / S path
+  // Level 4 (simplified open center)
   [
-    { x:0,y:0,w:800,h:20 },{ x:0,y:580,w:800,h:20 },
-    { x:0,y:0,w:20,h:600 },{ x:780,y:0,w:20,h:600 },
-    { x:100,y:100,w:600,h:20 }, 
-    { x:100,y:100,w:20,h:400 },
-    { x:100,y:500,w:600,h:20 },
-    { x:680,y:200,w:20,h:300 },
-    { x:250,y:200,w:400,h:20 },
-    { x:250,y:200,w:20,h:200 },
-    { x:250,y:400,w:350,h:20 }
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,0,0,1,0,0,1,0],
+    [0,1,0,1,1,1,1,0,1,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,1,0,0,1,0,1,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,0,0,0,0,0,1,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,0,0,0,0,0,0,0,0,0],
   ],
-  // Level 5 – Open Corridor Maze (Easier version)
-[
-  { x:0,y:0,w:800,h:20 }, { x:0,y:580,w:800,h:20 },
-  { x:0,y:0,w:20,h:600 }, { x:780,y:0,w:20,h:600 },
-
-  // Horizontal lanes
-  { x:100,y:120,w:600,h:20 },
-  { x:100,y:300,w:600,h:20 },
-  { x:100,y:460,w:600,h:20 },
-
-  // Vertical openings (breaks in walls)
-  { x:100,y:120,w:20,h:100 },
-  { x:680,y:300,w:20,h:160 },
-
-  // Vertical barriers to create detours
-  { x:250,y:140,w:20,h:160 },
-  { x:530,y:320,w:20,h:140 }
-]
+  // Level 5 (more open paths)
+  [
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,0,0,0,0,0,1,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,1,0,1,0,1,1,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,0,0,0,0,0,0,0,1,0],
+    [0,1,1,1,1,1,1,1,1,0],
+    [0,1,0,0,0,0,1,1,1,0],
+    [0,0,0,0,0,0,0,0,0,0],
+  ],
 ];
 
-// ===== Utilities =====
-function rectCollision(r1,r2){
-  return !(r1.x+r1.w<r2.x||r1.x>r2.x+r2.w||r1.y+r1.h<r2.y||r1.y>r2.y+r2.h);
-}
-function isRectCollidingAny(rect,walls){ return walls.some(w=>rectCollision(rect,w)); }
-
-function findSafePosition(walls, opts={}) {
-  const margin = opts.margin||10, attempts=500;
-  for(let i=0;i<attempts;i++){
-    const x = margin + Math.random()*(canvas.width-margin*2);
-    const y = margin + Math.random()*(canvas.height-margin*2);
-    const rect = {x,y,w:opts.w||40,h:opts.h||40};
-    if(!isRectCollidingAny(rect,walls)) return {x,y};
+// ===== Build Maze =====
+function buildMaze(lvl) {
+  walls = [];
+  const layout = mazes[lvl - 1];
+  const cellSize = 60;
+  for (let y = 0; y < layout.length; y++) {
+    for (let x = 0; x < layout[y].length; x++) {
+      if (layout[y][x] === 0) {
+        walls.push({ x: x * cellSize, y: y * cellSize, w: cellSize, h: cellSize });
+      }
+    }
   }
-  return {x:50,y:50};
+
+  player.x = 70;
+  player.y = 70;
+  enemy.x = 700;
+  enemy.y = 500;
+  key.x = 700;
+  key.y = 100;
+  keyCollected = false;
+  headStart = true;
+  gameRunning = true;
+
+  // Enemy scale + speed increase
+  enemy.size = 40 + level * 10;
+  enemy.speed = 1.5 + level * 0.3;
+
+  setTimeout(() => {
+    headStart = false;
+    specialSFX.play().catch(() => {});
+  }, 1500);
 }
 
-// ===== Movement =====
-function movePlayer(){
-  if(quizActive) return;
-  let nx=player.x,ny=player.y;
-  if(keysDown["ArrowUp"]||keysDown["w"]) ny-=player.speed;
-  if(keysDown["ArrowDown"]||keysDown["s"]) ny+=player.speed;
-  if(keysDown["ArrowLeft"]||keysDown["a"]) nx-=player.speed;
-  if(keysDown["ArrowRight"]||keysDown["d"]) nx+=player.speed;
-  const walls = mazes[level-1];
-  const rect={x:nx,y:ny,w:player.hitbox,h:player.hitbox};
-  if(!isRectCollidingAny(rect,walls)){ player.x=nx; player.y=ny; }
+// ===== Collision Check =====
+function checkCollision(a, b) {
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.size > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.size > b.y
+  );
 }
 
-function moveEnemy(){
-  if(quizActive) return;
-  const dx=player.x-enemy.x, dy=player.y-enemy.y;
-  const dist=Math.hypot(dx,dy);
-  if(dist>0){ enemy.x+=(dx/dist)*enemy.speed; enemy.y+=(dy/dist)*enemy.speed; }
+// ===== Player Move =====
+function movePlayer() {
+  let tempX = player.x;
+  let tempY = player.y;
+  if (keys["ArrowUp"]) tempY -= player.speed;
+  if (keys["ArrowDown"]) tempY += player.speed;
+  if (keys["ArrowLeft"]) tempX -= player.speed;
+  if (keys["ArrowRight"]) tempX += player.speed;
+
+  const hitWall = walls.some(w => checkCollision({ x: tempX, y: tempY, size: player.size }, w));
+  if (!hitWall) {
+    player.x = tempX;
+    player.y = tempY;
+  }
 }
 
-// ===== Key placement =====
-function placeKey(){
-  const walls=mazes[level-1];
-  let pos=findSafePosition(walls,{w:key.size,h:key.size,margin:30});
-  if(Math.hypot(pos.x-player.x,pos.y-player.y)<100) pos=findSafePosition(walls,{w:key.size,h:key.size,margin:30});
-  key.x=pos.x; key.y=pos.y; key.collected=false;
+// ===== Enemy Move =====
+function moveEnemy() {
+  if (headStart) return;
+  let dx = player.x - enemy.x;
+  let dy = player.y - enemy.y;
+  let dist = Math.hypot(dx, dy);
+  if (dist > 0) {
+    enemy.x += (dx / dist) * enemy.speed;
+    enemy.y += (dy / dist) * enemy.speed;
+  }
 }
 
-// ===== Quiz =====
-function showQuestion(){
-  const startIndex=(level-1)*3;
-  const q=questions[startIndex+currentQuestionIndex]; if(!q) return;
-  questionText.textContent=q.q;
-  answersDiv.innerHTML="";
-  q.btns=[];
-  q.a.forEach(ans=>{
-    const btn=document.createElement("button");
-    btn.textContent=ans;
-    btn.onclick=()=>answerQuestion(ans,btn);
+// ===== Game Loop =====
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw background
+  ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+
+  // Draw maze
+  ctx.fillStyle = "#333";
+  walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+
+  // Draw key
+  if (!keyCollected) {
+    ctx.fillStyle = "gold";
+    ctx.beginPath();
+    ctx.arc(key.x, key.y, key.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw player
+  ctx.fillStyle = "cyan";
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw enemy
+  ctx.fillStyle = "red";
+  ctx.beginPath();
+  ctx.arc(enemy.x, enemy.y, enemy.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (gameRunning && !quizActive) {
+    movePlayer();
+    moveEnemy();
+
+    // Check key collection
+    if (
+      !keyCollected &&
+      Math.hypot(player.x - key.x, player.y - key.y) < player.size
+    ) {
+      keyCollected = true;
+      startQuiz();
+    }
+
+    // Check enemy collision
+    if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < enemy.size / 2 + player.size / 3) {
+      gameOver();
+    }
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ===== Quiz System =====
+function startQuiz() {
+  quizActive = true;
+  quizContainer.style.display = "flex";
+  quizTime = 15;
+  specialSFX.played = false;
+  showQuestion();
+
+  quizTimer = setInterval(() => {
+    quizTime -= 0.05;
+    timeLeftEl.textContent = Math.ceil(quizTime);
+    if (quizTime <= 10 && !specialSFX.played) {
+      specialSFX.play().catch(() => {});
+      specialSFX.played = true;
+    }
+    if (quizTime <= 0) endQuiz(false);
+  }, 50);
+}
+
+function showQuestion() {
+  const q = questions[(level - 1) * 3];
+  questionText.textContent = q.q;
+  answersDiv.innerHTML = "";
+  q.a.forEach(ans => {
+    const btn = document.createElement("button");
+    btn.textContent = ans;
+    btn.onclick = () => answerQuestion(ans, q);
     answersDiv.appendChild(btn);
-    q.btns.push(btn);
   });
 }
 
-function answerQuestion(ans,clickedBtn){
-  const startIndex=(level-1)*3;
-  const q=questions[startIndex+currentQuestionIndex];
-  if(ans===q.c){ score+=100; nextOrShowNext(); }
-  else{
-    if(clickedBtn) clickedBtn.style.backgroundColor="red";
-    q.btns.forEach(btn=>{ if(btn.textContent===q.c) btn.style.backgroundColor="green"; });
-    setTimeout(()=>{ nextOrShowNext(); },1000);
+function answerQuestion(ans, q) {
+  if (ans === q.c) {
+    score += 100;
+    endQuiz(true);
+  } else {
+    endQuiz(false);
   }
-  document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
 }
 
-function nextOrShowNext(){
-  currentQuestionIndex++;
-  if(currentQuestionIndex>=3) endQuiz(true);
-  else showQuestion();
+function endQuiz(success) {
+  clearInterval(quizTimer);
+  quizContainer.style.display = "none";
+  quizActive = false;
+  if (success) nextLevel();
+  else gameOver();
 }
 
-function startQuiz(){
-  quizActive=true; quizContainer.style.display="flex"; currentQuestionIndex=0; quizTime=15; sfxPlayed=false;
-  try{ specialSFX.pause(); specialSFX.currentTime=0; }catch(e){}
-  showQuestion();
-  quizTimer=setInterval(()=>{
-    quizTime-=0.05; timeLeftEl.textContent=Math.ceil(quizTime);
-    if(quizTime<=10 && !sfxPlayed){ specialSFX.play().catch(()=>{}); sfxPlayed=true; }
-    if(quizTime<=0) endQuiz(false);
-  },50);
-}
-
-function endQuiz(success){
-  clearInterval(quizTimer); quizActive=false; quizContainer.style.display="none";
-  try{ specialSFX.pause(); specialSFX.currentTime=0; }catch(e){}
-  if(success) nextLevel(); else gameOver();
-}
-
-// ===== Head start =====
-let headStartActive = true;
-const headStartDuration = 1500; // 1.5s
-let headStartStartTime = null;
-
-// ===== Level progression =====
-function nextLevel(){
-  level++; if(level>5){ alert("You beat all 5 levels! 🎉"); level=1; score=0; }
-  const walls=mazes[level-1];
-  const pPos=findSafePosition(walls,{w:player.size,h:player.size,margin:40});
-  const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
-  player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
-
-  // Enemy grows faster on higher levels
-  enemy.size = 40 + (level-1)*20;
-  enemy.speed = 2 + (level-1)*0.5;
-
-  // Player speed same as lvl5
-  player.speed = 4.5;
-
-  placeKey();
-  document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
-
-  headStartActive = true;
-  headStartStartTime = null;
-  specialSFX.play().catch(()=>{});
-}
-
-// ===== Game Over =====
-function gameOver(){ gameOverScreen.style.display="flex"; }
-
-// ===== Restart =====
-restartBtn.addEventListener("click",()=>{
-  gameOverScreen.style.display="none"; 
-  level=1; score=0; enemy.size=40; enemy.speed=2; player.speed=4.5;
-  const walls=mazes[level-1];
-  const pPos=findSafePosition(walls,{w:player.size,h:player.size,margin:40});
-  const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
-  player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
-  placeKey();
-  document.getElementById("score").textContent=`Score: ${score} | Level: ${level}`;
-  headStartActive = true; headStartStartTime = null;
-  specialSFX.play().catch(()=>{});
-  requestAnimationFrame(loop);
-});
-
-// ===== Draw =====
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const walls=mazes[level-1];
-  ctx.fillStyle="gray"; walls.forEach(w=>ctx.fillRect(w.x,w.y,w.w,w.h));
-  if(!key.collected){ ctx.fillStyle="gold"; ctx.fillRect(key.x,key.y,key.size,key.size); }
-  ctx.drawImage(playerImg,player.x,player.y,player.size,player.size);
-  ctx.drawImage(enemyImg,enemy.x,enemy.y,enemy.size,enemy.size);
-}
-
-// ===== Loop =====
-function loop(timestamp){
-  if(!headStartStartTime) headStartStartTime = timestamp;
-  const elapsed = timestamp - headStartStartTime;
-
-  const hitDist=(player.hitbox+enemy.size)/2;
-  if(Math.hypot(player.x-enemy.x,player.y-enemy.y)<hitDist) return gameOver();
-
-  movePlayer();
-
-  if(!headStartActive || elapsed >= headStartDuration){
-    headStartActive = false;
-    moveEnemy();
+// ===== Level Handling =====
+function nextLevel() {
+  level++;
+  if (level > mazes.length) {
+    alert("You win!");
+    location.reload();
+  } else {
+    document.getElementById("score").textContent = `Score: ${score} | Level: ${level}`;
+    buildMaze(level);
   }
-
-  if(!key.collected && Math.abs(player.x-key.x)<(player.hitbox/2+key.size/2) && Math.abs(player.y-key.y)<(player.hitbox/2+key.size/2)){
-    key.collected=true; startQuiz();
-  }
-
-  draw();
-  requestAnimationFrame(loop);
 }
 
-// ===== Start =====
-(function initGame(){
-  const walls=mazes[level-1];
-  const pPos=findSafePosition(walls,{w:player.size,h:player.size,margin:40});
-  const ePos=findSafePosition(walls,{w:enemy.size,h:enemy.size,margin:40});
-  player.x=pPos.x; player.y=pPos.y; enemy.x=ePos.x; enemy.y=ePos.y;
+function gameOver() {
+  alert("Game Over!");
+  location.reload();
+}
 
-  player.speed = 4.5;
-  headStartActive = true; headStartStartTime = null;
-  specialSFX.play().catch(()=>{});
-  placeKey(); 
-  requestAnimationFrame(loop);
-})();
+// ===== Start Game =====
+bgMusic.play().catch(() => {});
+buildMaze(level);
+gameLoop();
