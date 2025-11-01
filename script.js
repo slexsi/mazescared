@@ -88,18 +88,24 @@ const mazes = [
     { x:250,y:200,w:20,h:200 },
     { x:250,y:400,w:350,h:20 }
   ],
-// Level 5 – Easier open arena
-  [
-    { x:0,y:0,w:800,h:20 }, { x:0,y:580,w:800,h:20 },
-    { x:0,y:0,w:20,h:600 }, { x:780,y:0,w:20,h:600 },
-    // Few simple obstacles for shape
-    { x:150,y:150,w:500,h:20 },
-    { x:150,y:430,w:500,h:20 },
-    { x:150,y:150,w:20,h:300 },
-    { x:630,y:150,w:20,h:300 },
-    // small center pillar for fun
-    { x:380,y:250,w:40,h:100 }
-  ]
+  // Level 5 – Open Corridor Maze (Easier version)
+[
+  { x:0,y:0,w:800,h:20 }, { x:0,y:580,w:800,h:20 },
+  { x:0,y:0,w:20,h:600 }, { x:780,y:0,w:20,h:600 },
+
+  // Horizontal lanes
+  { x:100,y:120,w:600,h:20 },
+  { x:100,y:300,w:600,h:20 },
+  { x:100,y:460,w:600,h:20 },
+
+  // Vertical openings (breaks in walls)
+  { x:100,y:120,w:20,h:100 },
+  { x:680,y:300,w:20,h:160 },
+
+  // Vertical barriers to create detours
+  { x:250,y:140,w:20,h:160 },
+  { x:530,y:320,w:20,h:140 }
+]
 ];
 
 // ===== Utilities =====
